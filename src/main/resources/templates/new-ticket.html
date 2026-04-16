@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>New Ticket — Complaint Tracker</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}"/>
+</head>
+<body>
+
+<header class="navbar">
+    <div class="brand">🎫 Complaint <span>Tracker</span></div>
+    <nav>
+        <a th:href="@{/}">Dashboard</a>
+        <a sec:authorize="hasRole('USER')" th:href="@{/tickets/new}">+ New Ticket</a>
+        <span style="color:#94a3b8; margin-left:1.5rem;">
+            👤 <span sec:authentication="name">User</span>
+            <span sec:authorize="hasRole('ADMIN')"
+                  style="background:#4fc3f7;color:#1e3a5f;border-radius:4px;padding:.1rem .5rem;font-size:.75rem;font-weight:700;margin-left:.3rem;">
+                ADMIN
+            </span>
+        </span>
+        <form th:action="@{/logout}" method="post" style="display:inline; margin-left:1rem;">
+            <button type="submit" style="background:none;border:none;color:#fca5a5;cursor:pointer;font-size:.95rem;padding:0;">
+                Logout
+            </button>
+        </form>
+    </nav>
+</header>
+
+<div class="container">
+    <h1 class="page-title">Raise a Complaint</h1>
+
+    <div class="card" style="max-width:680px">
+        <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
+
+        <form method="post" th:action="@{/tickets}">
+            <div class="form-grid">
+                <div class="form-group full">
+                    <label for="title">Title *</label>
+                    <input id="title" name="title" type="text"
+                           placeholder="Short summary of the issue" required
+                           th:value="${param.title}"/>
+                </div>
+                <div class="form-group">
+                    <label for="category">Category *</label>
+                    <select id="category" name="category" required>
+                        <option value="">— Select —</option>
+                        <option value="BILLING">Billing</option>
+                        <option value="TECHNICAL">Technical</option>
+                        <option value="DELIVERY">Delivery</option>
+                        <option value="PRODUCT">Product</option>
+                        <option value="SERVICE">Service</option>
+                        <option value="OTHER">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="raisedBy">Your Name / Email *</label>
+                    <input id="raisedBy" name="raisedBy" type="text"
+                           placeholder="e.g. john@example.com" required
+                           th:value="${param.raisedBy}"/>
+                </div>
+                <div class="form-group full">
+                    <label for="description">Description *</label>
+                    <textarea id="description" name="description"
+                              placeholder="Describe the issue in detail..." required></textarea>
+                </div>
+            </div>
+
+            <div style="margin-top:1.2rem; display:flex; gap:.8rem;">
+                <button type="submit" class="btn btn-success">Submit Complaint</button>
+                <a th:href="@{/}" class="btn btn-primary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+</body>
+</html>

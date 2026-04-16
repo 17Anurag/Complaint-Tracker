@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Register — Complaint Tracker</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}"/>
+    <style>
+        .auth-wrapper {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f0f2f5;
+        }
+        .auth-box {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 24px rgba(0,0,0,.10);
+            padding: 2.5rem 2rem;
+            width: 100%;
+            max-width: 420px;
+        }
+        .auth-logo {
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1e3a5f;
+            margin-bottom: 1.8rem;
+        }
+        .auth-logo span { color: #4fc3f7; }
+        .auth-box h2 { font-size: 1.2rem; margin-bottom: 1.4rem; color: #374151; }
+        .auth-footer { text-align: center; margin-top: 1.2rem; font-size: .9rem; color: #6b7280; }
+        .auth-footer a { color: #3b82f6; font-weight: 600; }
+    </style>
+</head>
+<body>
+<div class="auth-wrapper">
+    <div class="auth-box">
+        <div class="auth-logo">🎫 Complaint <span>Tracker</span></div>
+        <h2>Create an account</h2>
+
+        <div th:if="${error}"   class="alert alert-error"   th:text="${error}"></div>
+        <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+
+        <form method="post" th:action="@{/register}">
+            <div class="form-group" style="margin-bottom:1rem">
+                <label for="fullName">Full Name</label>
+                <input id="fullName" name="fullName" type="text"
+                       placeholder="Your full name" required/>
+            </div>
+            <div class="form-group" style="margin-bottom:1rem">
+                <label for="username">Username</label>
+                <input id="username" name="username" type="text"
+                       placeholder="Choose a username" required/>
+            </div>
+            <div class="form-group" style="margin-bottom:1rem">
+                <label for="password">Password</label>
+                <input id="password" name="password" type="password"
+                       placeholder="Choose a password" required/>
+            </div>
+            <div class="form-group" style="margin-bottom:1.4rem">
+                <label for="role">Account Type</label>
+                <select id="role" name="role">
+                    <option value="ROLE_USER">User — can view &amp; submit tickets</option>
+                    <option value="ROLE_ADMIN">Admin — can assign, update &amp; delete</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-success" style="width:100%; justify-content:center; padding:.7rem;">
+                Create Account
+            </button>
+        </form>
+
+        <div class="auth-footer">
+            Already have an account? <a th:href="@{/login}">Sign in</a>
+        </div>
+    </div>
+</div>
+</body>
+</html>

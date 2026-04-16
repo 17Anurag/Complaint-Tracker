@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Complaint Ticket Tracker</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}"/>
+</head>
+<body>
+
+<!-- Navbar -->
+<header class="navbar">
+    <div class="brand">🎫 Complaint <span>Tracker</span></div>
+    <nav>
+        <a th:href="@{/}">Dashboard</a>
+        <!-- Only users can raise new tickets -->
+        <a sec:authorize="hasRole('USER')" th:href="@{/tickets/new}">+ New Ticket</a>
+        <span style="color:#94a3b8; margin-left:1.5rem;">
+            👤 <span sec:authentication="name">User</span>
+            <span sec:authorize="hasRole('ADMIN')"
+                  style="background:#4fc3f7;color:#1e3a5f;border-radius:4px;padding:.1rem .5rem;font-size:.75rem;font-weight:700;margin-left:.3rem;">
+                ADMIN
+            </span>
+        </span>
+        <form th:action="@{/logout}" method="post" style="display:inline; margin-left:1rem;">
+            <button type="submit" style="background:none;border:none;color:#fca5a5;cursor:pointer;font-size:.95rem;padding:0;">
+                Logout
+            </button>
+        </form>
+    </nav>
+</header>
+
+<div class="container">
+
+    <!-- Flash messages -->
+    <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+    <div th:if="${error}"   class="alert alert-error"   th:text="${error}"></div>
+
+    <h1 class="page-title">Dashboard</h1>
+
+    <!-- Stats -->
+    <div class="stats">
+        <div class="stat-card total">
+            <div class="num" th:text="${totalCount}">0</div>
+            <div class="label">Total Tickets</div>
+        </div>
+        <div class="stat-card open">
+            <div class="num" th:text="${openCount}">0</div>
+            <div class="label">Open</div>
+        </div>
+        <div class="stat-card prog">
+            <div class="num" th:text="${inProgressCount}">0</div>
+            <div class="label">In Progress</div>
+        </div>
+        <div class="stat-card done">
+            <div class="num" th:text="${resolvedCount}">0</div>
+            <div class="label">Resolved</div>
+        </div>
+    </div>
+
+    <!-- Filter bar -->
+    <div class="card">
+        <form method="get" th:action="@{/}" class="filter-bar">
+            <select name="status">
+                <option value="">All Statuses</option>
+                <option value="OPEN"        th:selected="${selectedStatus == 'OPEN'}">Open</option>
+                <option value="IN_PROGRESS" th:selected="${selectedStatus == 'IN_PROGRESS'}">In Progress</option>
+                <option value="RESOLVED"    th:selected="${selectedStatus == 'RESOLVED'}">Resolved</option>
+            </select>
+            <select name="category">
+                <option value="">All Categories</option>
+                <option value="BILLING"   th:selected="${selectedCategory == 'BILLING'}">Billing</option>
+                <option value="TECHNICAL" th:selected="${selectedCategory == 'TECHNICAL'}">Technical</option>
+                <option value="DELIVERY"  th:selected="${selectedCategory == 'DELIVERY'}">Delivery</option>
+                <option value="PRODUCT"   th:selected="${selectedCategory == 'PRODUCT'}">Product</option>
+                <option value="SERVICE"   th:selected="${selectedCategory == 'SERVICE'}">Service</option>
+                <option value="OTHER"     th:selected="${selectedCategory == 'OTHER'}">Other</option>
+            </select>
+            <button type="submit" class="btn btn-primary">Filter</button>
+            <a th:href="@{/}" class="btn btn-info">Reset</a>
+            <!-- Only users can raise new tickets -->
+            <a sec:authorize="hasRole('USER')" th:href="@{/tickets/new}" class="btn btn-success" style="margin-left:auto">+ New Ticket</a>
+        </form>
+
+        <!-- USER info banner -->
+        <div sec:authorize="hasRole('USER')"
+             style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:.8rem 1rem;margin-bottom:1rem;font-size:.9rem;color:#1e40af;">
+            👤 You are logged in as a <strong>User</strong>. You can view tickets and raise new complaints.
+            Contact an admin to assign or resolve tickets.
+        </div>
+
+        <!-- ADMIN info banner -->
+        <div sec:authorize="hasRole('ADMIN')"
+             style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:.8rem 1rem;margin-bottom:1rem;font-size:.9rem;color:#166534;">
+            👑 You are logged in as <strong>Admin</strong>. You can assign, update status, and delete tickets.
+        </div>
+
+        <!-- Tickets table -->
+        <div class="table-wrap">
+            <table th:if="${not #lists.isEmpty(tickets)}">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Title</th>
+                        <th>Category</th>
+                        <th>Status</th>
+                        <th>Raised By</th>
+                        <th>Assigned To</th>
+                        <th>Created</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="t : ${tickets}">
+                        <td th:text="${t.id}"></td>
+                        <td>
+                            <a th:href="@{/tickets/{id}(id=${t.id})}"
+                               style="color:#1e3a5f;font-weight:600;"
+                               th:text="${t.title}"></a>
+                        </td>
+                        <td><span class="badge badge-cat" th:text="${t.category}"></span></td>
+                        <td>
+                            <span th:classappend="${t.status.name() == 'OPEN' ? 'badge-open' : (t.status.name() == 'IN_PROGRESS' ? 'badge-progress' : 'badge-resolved')}"
+                                  class="badge"
+                                  th:text="${t.status}"></span>
+                        </td>
+                        <td th:text="${t.raisedBy}"></td>
+                        <td th:text="${t.assignedTo != null ? t.assignedTo : '—'}"></td>
+                        <td th:text="${#temporals.format(t.createdAt, 'dd MMM yyyy')}"></td>
+                        <td>
+                            <!-- Both roles can view -->
+                            <a th:href="@{/tickets/{id}(id=${t.id})}" class="btn btn-info btn-sm">View</a>
+                            <!-- Only admin can delete -->
+                            <form sec:authorize="hasRole('ADMIN')"
+                                  th:action="@{/tickets/{id}/delete(id=${t.id})}" method="post"
+                                  style="display:inline"
+                                  onsubmit="return confirm('Delete this ticket?')">
+                                <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div th:if="${#lists.isEmpty(tickets)}" class="empty">
+                <div class="icon">📭</div>
+                <p>No tickets found.
+                    <a sec:authorize="hasRole('USER')" th:href="@{/tickets/new}" style="color:#3b82f6">Raise one now.</a>
+                    <span sec:authorize="hasRole('ADMIN')">No tickets match the current filter.</span>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

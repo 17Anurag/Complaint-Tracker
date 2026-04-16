@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title th:text="'Ticket #' + ${ticket.id} + ' — Complaint Tracker'">Ticket Detail</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}"/>
+</head>
+<body>
+
+<header class="navbar">
+    <div class="brand">🎫 Complaint <span>Tracker</span></div>
+    <nav>
+        <a th:href="@{/}">Dashboard</a>
+        <a sec:authorize="hasRole('USER')" th:href="@{/tickets/new}">+ New Ticket</a>
+        <span style="color:#94a3b8; margin-left:1.5rem;">
+            👤 <span sec:authentication="name">User</span>
+            <span sec:authorize="hasRole('ADMIN')"
+                  style="background:#4fc3f7;color:#1e3a5f;border-radius:4px;padding:.1rem .5rem;font-size:.75rem;font-weight:700;margin-left:.3rem;">
+                ADMIN
+            </span>
+        </span>
+        <form th:action="@{/logout}" method="post" style="display:inline; margin-left:1rem;">
+            <button type="submit" style="background:none;border:none;color:#fca5a5;cursor:pointer;font-size:.95rem;padding:0;">
+                Logout
+            </button>
+        </form>
+    </nav>
+</header>
+
+<div class="container">
+
+    <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+    <div th:if="${error}"   class="alert alert-error"   th:text="${error}"></div>
+
+    <!-- Header row -->
+    <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem; flex-wrap:wrap;">
+        <h1 class="page-title" style="margin:0" th:text="'Ticket #' + ${ticket.id}"></h1>
+        <span th:classappend="${ticket.status.name() == 'OPEN' ? 'badge-open' : (ticket.status.name() == 'IN_PROGRESS' ? 'badge-progress' : 'badge-resolved')}"
+              class="badge" style="font-size:.9rem; padding:.35rem .9rem;"
+              th:text="${ticket.status}"></span>
+        <a th:href="@{/}" class="btn btn-primary btn-sm" style="margin-left:auto">← Back</a>
+    </div>
+
+    <!-- Ticket info -->
+    <div class="card">
+        <h2 th:text="${ticket.title}" style="margin-bottom:1.2rem; color:#1e3a5f;"></h2>
+        <div class="detail-grid">
+            <div class="detail-item">
+                <label>Category</label>
+                <p><span class="badge badge-cat" th:text="${ticket.category}"></span></p>
+            </div>
+            <div class="detail-item">
+                <label>Raised By</label>
+                <p th:text="${ticket.raisedBy}"></p>
+            </div>
+            <div class="detail-item">
+                <label>Assigned To</label>
+                <p th:text="${ticket.assignedTo != null ? ticket.assignedTo : 'Not assigned yet'}"></p>
+            </div>
+            <div class="detail-item">
+                <label>Created</label>
+                <p th:text="${#temporals.format(ticket.createdAt, 'dd MMM yyyy, HH:mm')}"></p>
+            </div>
+            <div class="detail-item">
+                <label>Last Updated</label>
+                <p th:text="${#temporals.format(ticket.updatedAt, 'dd MMM yyyy, HH:mm')}"></p>
+            </div>
+            <div class="detail-item full" style="grid-column:1/-1">
+                <label>Description</label>
+                <p th:text="${ticket.description}" style="line-height:1.6; margin-top:.4rem;"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Actions -->
+    <div class="card" sec:authorize="hasRole('ADMIN')">
+        <h3 style="margin-bottom:1.2rem; color:#1e3a5f;">Admin Actions</h3>
+        <div style="display:flex; gap:1rem; flex-wrap:wrap;">
+
+            <!-- Assign -->
+            <button class="btn btn-warning" onclick="openModal('assignModal')">👤 Assign Ticket</button>
+
+            <!-- Advance Status -->
+            <form th:if="${ticket.status.name() == 'OPEN'}"
+                  th:action="@{/tickets/{id}/status(id=${ticket.id})}" method="post">
+                <input type="hidden" name="status" value="IN_PROGRESS"/>
+                <button type="submit" class="btn btn-info">▶ Mark In Progress</button>
+            </form>
+
+            <form th:if="${ticket.status.name() == 'IN_PROGRESS'}"
+                  th:action="@{/tickets/{id}/status(id=${ticket.id})}" method="post">
+                <input type="hidden" name="status" value="RESOLVED"/>
+                <button type="submit" class="btn btn-success">✔ Mark Resolved</button>
+            </form>
+
+            <span th:if="${ticket.status.name() == 'RESOLVED'}"
+                  style="color:#065f46; font-weight:600; align-self:center;">
+                ✅ This ticket is resolved.
+            </span>
+
+            <!-- Delete -->
+            <form th:action="@{/tickets/{id}/delete(id=${ticket.id})}" method="post"
+                  style="margin-left:auto"
+                  onsubmit="return confirm('Permanently delete this ticket?')">
+                <button type="submit" class="btn btn-danger">🗑 Delete</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- User notice -->
+    <div class="card" sec:authorize="hasRole('USER')"
+         style="background:#eff6ff; border:1px solid #bfdbfe;">
+        <p style="color:#1e40af; font-size:.95rem; margin:0;">
+            ℹ️ Only admins can assign, update status, or delete tickets.
+            Contact your administrator if this ticket needs attention.
+        </p>
+    </div>
+</div>
+
+<!-- Assign Modal -->
+<div class="modal-overlay" id="assignModal">
+    <div class="modal">
+        <h3>Assign Ticket</h3>
+        <form th:action="@{/tickets/{id}/assign(id=${ticket.id})}" method="post">
+            <div class="form-group">
+                <label for="assignedTo">Assign to (name or team)</label>
+                <input id="assignedTo" name="assignedTo" type="text"
+                       placeholder="e.g. support-team"
+                       th:value="${ticket.assignedTo}"
+                       required/>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-primary" onclick="closeModal('assignModal')">Cancel</button>
+                <button type="submit" class="btn btn-success">Assign</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openModal(id)  { document.getElementById(id).classList.add('active'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+    // Close on backdrop click
+    document.querySelectorAll('.modal-overlay').forEach(el => {
+        el.addEventListener('click', e => { if (e.target === el) el.classList.remove('active'); });
+    });
+</script>
+
+</body>
+</html>
