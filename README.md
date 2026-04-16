@@ -7,7 +7,7 @@ A full-stack complaint management system built with **Java Spring Boot**, **Spri
 ## 📸 Screenshots
 
 ### Dashboard
-![Dashboard](docs/screenshots/dashboard.png)
+![Dashboard](docs/screenshots/admin-dashboard.png)
 > View all tickets at a glance with live stats, status/category filters, and quick actions.
 
 ### Raise a Complaint
